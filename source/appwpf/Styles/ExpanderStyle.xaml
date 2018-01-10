@@ -1,0 +1,117 @@
+﻿<!--/************************************************************************************  
+' Copyright (C) 2009 Anthony Bouch (http://www.58bits.com) under the terms of the
+' Microsoft Public License (Ms-PL http://www.codeplex.com/precode/license)
+'***********************************************************************************/-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    >
+
+  <ControlTemplate x:Key="ExpanderToggleButton" TargetType="ToggleButton">
+    <Border
+      Name="Border"
+      CornerRadius="0"
+      Background="Transparent"
+      BorderThickness="0">
+      <Path
+        Name="Arrow"
+        Fill="White"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        Data="M 4 0 L 4 8 L 0 4 Z"/>
+    </Border>
+    <ControlTemplate.Triggers>
+      <Trigger Property="IsChecked" Value="true">
+        <Setter TargetName="Arrow" Property="Data"
+                Value="M 0 0 L 4 4 L 8 0 Z" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter TargetName="Arrow" Property="Fill"
+                Value="#DDDDDD" />
+      </Trigger>
+    </ControlTemplate.Triggers>
+  </ControlTemplate>
+
+  <Style TargetType="Expander">
+    <Setter Property="Foreground" Value="{DynamicResource FontForecolor}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Expander">
+          <Border Name="Outer3D" Margin="0,0,0,1" SnapsToDevicePixels="True" BorderThickness="0.5,0.5,0,0" CornerRadius="2" BorderBrush="#DDBBBBBB">
+            <Border Name="Inner3D" SnapsToDevicePixels="True" BorderThickness="0,0,0.5,0.5" CornerRadius="2" BorderBrush="#DD777777">
+              <Grid Margin="4">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Name="ContentRow" Height="0"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header Border-->
+                <Border
+                  Name="Border"
+                  Grid.Row="0"
+                  Background="Transparent"
+                  BorderThickness="0"
+                  CornerRadius="0" >
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="20" />
+                    </Grid.ColumnDefinitions>
+                    <ContentPresenter Grid.Column="0" Margin="4" ContentSource="Header" RecognizesAccessKey="True"  HorizontalAlignment="Right" />
+                    <ToggleButton Grid.Column="1" IsChecked="{Binding Path=IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                      OverridesDefaultStyle="True"
+                      Template="{StaticResource ExpanderToggleButton}" />
+                  </Grid>
+                </Border>
+
+                <!-- Expander Contents-->
+                <Border Name="Content" SnapsToDevicePixels="True" Grid.Row="1" BorderThickness="1" BorderBrush="#FF0A0A0A" Margin="0,0,0,3" CornerRadius="2">
+                  <Border SnapsToDevicePixels="True" BorderThickness="1,1,0,0" BorderBrush="#FF777777" CornerRadius="2">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#6600000A" Offset="0"/>
+                        <GradientStop Color="#9900000A" Offset="0.5"/>
+                        <GradientStop Color="#6600000A" Offset="1.0"/>
+                      </LinearGradientBrush>
+                    </Border.Background>
+                    <Border SnapsToDevicePixels="True" BorderThickness="0,0,1,1" BorderBrush="#FF444444" CornerRadius="2">
+                      <Border.Background>
+                        <RadialGradientBrush Center="0.5,0" GradientOrigin="0.5,-0.5" RadiusX="1" RadiusY="0.4">
+                          <GradientStop Color="#FFFFFFFF"  Offset="0"/>
+                          <GradientStop Color="#00000000" Offset="1"/>
+                        </RadialGradientBrush>
+                      </Border.Background>
+                      <ContentPresenter Margin="4" />
+                    </Border>
+                  </Border>
+                </Border>
+              </Grid>
+            </Border>
+          </Border>
+
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsExpanded" Value="True">
+              <Setter TargetName="ContentRow" Property="Height"
+                      Value="{Binding ElementName=Content,Path=DesiredHeight}" />
+              <Setter TargetName="Outer3D" Property="Margin"
+                      Value="0,0,0,6" />
+              <!--<Setter TargetName="Inner3D" Property="Background">
+                <Setter.Value>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#DD222227" Offset="0"/>
+                    <GradientStop Color="#DD222227" Offset="0.3"/>
+                    <GradientStop Color="#BB222227" Offset="0.6"/>
+                    <GradientStop Color="#BB222227" Offset="1"/>
+                  </LinearGradientBrush>
+                </Setter.Value>
+              </Setter>-->
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Foreground" Value="{DynamicResource DisabledFontForecolor}"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>

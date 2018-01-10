@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<?define Product.Author = "Anthony Bouch" ?>
+<?define Product.Name = "FiftyEightBits PreCode" ?>
+<?define Product.Language = "1033" ?>
+<?define Product.Version = "@build.number@" ?>
+<?define Product.ProductCode = "@product.productcode@" ?>
+<?define Product.UpgradeCode = "CD8BCF35-E30D-4e4b-A12A-8586496F7468" ?>
+<?define Product.InstallDir = "FiftyEightBits" ?>
+<?define Product.ProductDir = "PreCode" ?>
+<?define Product.ShortcutName = "PreCode Code Manager" ?>
+<?define Package.Description = "Code snippet plugin for Windows Live Writer and Windows Desktop with Syntaxhighlighter support." ?>
+<?define Package.Comments = "Code snippet plugin for Windows Live Writer and Windows Desktop with Syntaxhighlighter support." ?>
+
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="$(var.Product.ProductCode)"
+			 Name="$(var.Product.Name)"
+			 Language = "1033"
+			 Version="$(var.Product.Version)"
+			 Manufacturer="$(var.Product.Author)"
+			 UpgradeCode="$(var.Product.UpgradeCode)"
+			 Codepage="1252">
+    <Package Comments="$(var.Package.Comments)"
+				 Description="$(var.Package.Description)"
+				 InstallerVersion="200"
+				 Compressed="yes" />
+
+    <!--
+		This information enables Windows Installer major upgrade functionality so users can seamlessly
+		install a new version of the product and have the old version automatically uninstall behind
+		the scenes. See the following topic in the MSDN Library for additional information:
+		http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/major_upgrades.asp
+		-->
+    <Upgrade Id="$(var.Product.UpgradeCode)">
+      <UpgradeVersion Minimum="$(var.Product.Version)" OnlyDetect="yes" Property="NEWERVERSIONDETECTED" />
+      <UpgradeVersion Minimum="0.0.0.0" IncludeMinimum="yes" Maximum="$(var.Product.Version)" IncludeMaximum="no" Property="OLDERVERSIONBEINGUPGRADED" />
+    </Upgrade>
+
+    <PropertyRef Id="NETFRAMEWORK35"/>
+    <Condition Message="This setup requires the .NET Framework 3.5sp1 to be installed.">
+      <![CDATA[Installed OR NETFRAMEWORK35 = "#1"]]>
+    </Condition>
+
+    <!--
+		This custom action prevents users from installing if a newer version of this product is already
+		installed on the system. This is a part of Windows Installer major upgrade functionality.
+		-->
+    <CustomAction Id="CustomAction.BlockOlderVersionInstall" Error="A newer version of [ProductName] is already installed." />
+
+    <Media Id="1" Cabinet="PreCode.cab" EmbedCab="yes" CompressionLevel="medium" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLDIR" Name="$(var.Product.InstallDir)" >
+          <Directory Id="PRODUCTDIR" Name="$(var.Product.ProductDir)"/>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="CompanyMenuDir" Name='FiftyEightBits'>
+          <Directory Id='ApplicationMenuDir' Name='$(var.Product.ProductDir)'  />
+        </Directory>
+      </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <DirectoryRef Id="PRODUCTDIR">
+      <Component Id="PreCode.dll" Guid="0F714353-0265-4f6d-92E0-3373D8B3317F" DiskId="1">
+        <File Id="PreCode.dll" Name="PreCode.dll" Source="PreCode.dll"
+              AssemblyApplication="PreCode.dll" AssemblyManifest="PreCode.dll" Assembly=".net" KeyPath="yes" Vital="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="PRODUCTDIR">
+      <Component Id="DesktopApp" Guid="E1EA704C-4511-4372-A657-DE64FAAC74FC" DiskId="1">
+        <File Id="PreCode.exe" Name="PreCode.exe" Source="PreCode.exe" Vital="yes" KeyPath="yes">
+          <Shortcut Id="StartMenuShortCut" 
+                    Advertise="yes" 
+                    Directory="ApplicationMenuDir" 
+                    Name="$(var.Product.ShortcutName)" 
+                    WorkingDirectory='PRODUCTDIR'
+                    Icon="ARP.Ico" 
+                    IconIndex="0" />
+          <Shortcut Id="DeskTopShortCut" 
+                    Advertise="yes" 
+                    Directory="DesktopFolder" 
+                    Name="$(var.Product.ShortcutName)" 
+                    WorkingDirectory='PRODUCTDIR'
+                    Icon="ARP.Ico" 
+                    IconIndex="0" />
+        </File>
+        <File Id="PreCode.exe.config" Name="PreCode.exe.config" Source="PreCode.exe.config" />
+        <RemoveFolder Id='ApplicationMenuDir' Directory='ApplicationMenuDir' On='uninstall'/>
+        <RemoveFolder Id='CompanyMenuDir' Directory='CompanyMenuDir' On='uninstall'/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="PRODUCTDIR">
+      <Component Id="RegistryEntries" Guid="0C05152A-7DF0-4041-A77C-FB1E2AA8FA52">
+        <RegistryKey Root="HKLM" Key="Software\Windows Live\Writer\PluginAssemblies" Action="create">
+          <RegistryValue Type="string" Name="PreCode" Value="[PRODUCTDIR]PreCode.dll"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows Live\Writer\PluginAssemblies" Action="create">
+          <RegistryValue Type="string" Name="PreCode" Value="[PRODUCTDIR]PreCode.dll"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM" Key="Software\Windows Live Writer\PluginAssemblies" Action="create">
+          <RegistryValue Type="string" Name="PreCode" Value="[PRODUCTDIR]PreCode.dll"/>
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="PreCode" Title="Windows Live Writer Plugin"
+				 Description="Code window plugin for Windows Live Writer with Syntaxhighlighter support."
+				 Display="expand"
+				 ConfigurableDirectory="INSTALLDIR"
+				 Level="1"
+				 Absent="disallow"
+				 AllowAdvertise="no">
+      <ComponentRef Id="PreCode.dll" />
+     <ComponentRef Id="RegistryEntries" />
+    </Feature>
+
+    <Feature Id="PreCodeStandalone" Title="Windows Desktop Application "
+        Description="Code mananger for Windows Desktop."
+        Display="expand"
+        ConfigurableDirectory="INSTALLDIR"
+        Level="1"
+        Absent="allow"
+        AllowAdvertise="no">
+      <ComponentRef Id="DesktopApp" />      
+    </Feature>
+
+    <!--
+		The InstallExecuteSequence table describes the order that actions will be executed during
+		installation, repair and uninstall of this product.
+		-->
+    <InstallExecuteSequence>
+      <Custom Action="CustomAction.BlockOlderVersionInstall"
+					After="FindRelatedProducts">
+        <![CDATA[NEWERVERSIONDETECTED]]>
+      </Custom>
+      <Custom Action="CustomAction.SetARPINSTALLLOCATION"
+					After="InstallValidate" />
+      <RemoveExistingProducts After="InstallFinalize" />
+      <LaunchConditions After="AppSearch" />
+    </InstallExecuteSequence>
+
+    <!--
+		The InstallUISequence table describes the order that actions will be executed when the user
+		runs setup in full UI mode. Some actions must be scheduled in the UI and the execute sequence
+		tables to ensure that they will run regardless of whether the user runs setup in full UI mode
+		or in reduced UI or silent modes.
+		-->
+    <InstallUISequence>
+      <Custom Action="CustomAction.BlockOlderVersionInstall"
+					After="FindRelatedProducts">
+        <![CDATA[NEWERVERSIONDETECTED]]>
+      </Custom>
+    </InstallUISequence>
+
+    <Icon Id="ARP.Ico" SourceFile="PreCode.ico" />
+
+    <!--
+		These properties define links that will appear in the Add/Remove Programs control panel when
+		this product is installed on the system.
+		-->
+    <Property Id="ARPHELPLINK"
+				  Value="http://www.58bits.com/" />
+    <Property Id="ARPURLUPDATEINFO"
+				  Value="http://www.58bits.com/" />
+    <Property Id="ARPAUTHORIZEDCDFPREFIX"
+				  Value="http://www.58bits.com/" />
+    <Property Id="ARPPRODUCTICON">ARP.Ico</Property>
+    <Property Id="ARPURLINFOABOUT"
+				  Value="http://www.58bits.com/" />
+    <Property Id="ARPCONTACT"
+				  Value="$(var.Product.Author)" />
+    <Property Id="ARPCOMMENTS"
+				  Value="$(var.Product.Name)" />
+    <CustomAction Id="CustomAction.SetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[PRODUCTDIR]" />
+
+    <!--
+		This property defines the ALLUSERS property to be 1, which indicates that this product will be
+		installed per-machine instead of per-user.
+		-->
+    <Property Id="ALLUSERS">
+      <![CDATA[1]]>
+    </Property>
+    <Property Id="WIXUI_INSTALLDIR"
+				  Value="INSTALLDIR"/>
+
+    <!-- 500x63px -->
+    <WixVariable Id="WixUIBannerBmp"
+					 Value="Banner.bmp"/>
+    <!-- 503x314px -->
+    <WixVariable Id="WixUIDialogBmp"
+					 Value="Dialog.bmp"/>
+    <!-- 32x32px -->
+    <WixVariable Id="WixUIExclamationIco"
+					 Value="Exclamation.ico" />
+    <WixVariable Id="WixUIInfoIco"
+					 Value="Info.ico" />
+    <!-- 16x16px -->
+    <WixVariable Id="WixUINewIco"
+					 Value="NewFolder.ico" />
+    <WixVariable Id="WixUIUpIco"
+					 Value="FolderUp.ico" />
+
+    <WixVariable Id="WixUILicenseRtf"
+					 Value="License.rtf" />
+
+    <UIRef Id="WixUI_FeatureTree"/>
+
+  </Product>
+</Wix>

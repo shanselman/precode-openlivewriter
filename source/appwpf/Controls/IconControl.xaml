@@ -1,0 +1,21 @@
+﻿<!--/************************************************************************************  
+' Copyright (C) 2009 Anthony Bouch (http://www.58bits.com) under the terms of the
+' Microsoft Public License (Ms-PL http://www.codeplex.com/precode/license)
+'***********************************************************************************/-->
+    <UserControl x:Class="FiftyEightBits.PreCode.IconControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Height="16" Width="16">
+    <Grid>
+        <Ellipse Width="15" Height="15" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Ellipse.Fill>
+                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5" SpreadMethod="Pad">
+                    <GradientStop Color="#eaf178"  Offset="0"/>
+                    <GradientStop Color="#decf80"  Offset="0.7"/>
+                    <GradientStop Color="#76746c" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" FontSize="7" Foreground="Black">58</TextBlock>
+    </Grid>
+</UserControl>

@@ -1,0 +1,25 @@
+﻿<!--/************************************************************************************  
+' Copyright (C) 2009 Anthony Bouch (http://www.58bits.com) under the terms of the
+' Microsoft Public License (Ms-PL http://www.codeplex.com/precode/license)
+'***********************************************************************************/-->
+    <ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    >
+
+  <!--  Window Background Collor -->
+  <SolidColorBrush x:Key="WindowBackground" Color="#FFF52225"/>
+  
+    <!--  Application Text Color -->
+  <SolidColorBrush x:Key="FontForecolor" Color="#FFEEEEAA"/> 
+  <SolidColorBrush x:Key="DisabledFontForecolor" Color="#EECCCC99"/> 
+  
+  <!-- Main Background effect for Submenus!!!! -->
+  <LinearGradientBrush x:Key="SubmenuContentFill" EndPoint="0,1" StartPoint="0,0">
+    <GradientStop Color="#EE882222" Offset="0"/>
+    <GradientStop Color="#AA662233" Offset="0.75"/>
+    <GradientStop Color="#88222222" Offset="1"/>
+  </LinearGradientBrush>
+  
+  
+</ResourceDictionary>

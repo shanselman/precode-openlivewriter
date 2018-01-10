@@ -1,0 +1,257 @@
+<?xml version="1.0"?>
+<project name="PreCode"
+		 default="all"
+		 xmlns="http://nant.sf.net/release/0.86-beta1/nant.xsd">
+
+  <!-- Load default configuration. -->
+  <if test="${file::exists('default.properties')}">
+    <echo message="Loading default.properties" />
+    <include buildfile="default.properties" />
+  </if>
+
+  <!-- Load developer-specific configuration. -->
+  <if test="${file::exists('local.properties')}">
+    <echo message="Loading local.properties" />
+    <include buildfile="local.properties" />
+  </if>
+
+  <echo message="Build configuration:" />
+  <script language="C#">
+    <code>
+      <![CDATA[
+				public static void ScriptMain(Project project)
+				{
+					System.Collections.Generic.SortedDictionary<string, string> sortedByKey = new System.Collections.Generic.SortedDictionary<string, string>();
+					foreach(DictionaryEntry de in project.Properties)
+					{
+						sortedByKey.Add(de.Key.ToString(), de.Value.ToString());
+					}
+
+					NAnt.Core.Tasks.EchoTask echo = new NAnt.Core.Tasks.EchoTask();
+					echo.Project = project;
+					foreach(System.Collections.Generic.KeyValuePair<string, string> kvp in sortedByKey)
+					{
+						if(kvp.Key.StartsWith("nant."))
+						{
+							continue;
+						}
+
+						echo.Message = String.Format("{0}: {1}", kvp.Key, kvp.Value);
+						echo.Execute();
+					}
+				}
+			]]>
+    </code>
+  </script>
+
+  <target name="all"
+			depends="build-setup, build-app"
+			description="Compiles the application and runs all unit tests.">
+  </target>
+
+  <target name="clean"
+			description="Removes build artifacts.">
+    <delete dir="${test.results}"
+				failonerror="false" />
+    <delete dir="${deployment.artifacts}"
+				failonerror="false" />
+    <foreach item="Folder"
+				 property="folder">
+      <in>
+        <items>
+          <include name="source\**" />
+        </items>
+      </in>
+      <do>
+        <delete dir="${folder}\bin"
+						failonerror="false" />
+        <delete dir="${folder}\obj"
+						failonerror="false" />
+      </do>
+    </foreach>
+  </target>
+
+  <target name="get-build-number-from-file"
+			description="Reads the version number from VersionInfo.cs.">
+    <script language="C#">
+      <code>
+        <![CDATA[
+				public static void ScriptMain(Project project)
+				{
+					string file = String.Empty;
+					using (StreamReader sr = new StreamReader(@"source\VersionInfo.cs"))
+					{
+						file = sr.ReadToEnd();
+					}
+
+					project.Properties["build.number.fromfile"] = Regex.Match(file, "(?<=\\[assembly:\\s*AssemblyVersion(?:Attribute)?\\(\")\\d+\\.\\d+\\.\\d+\\.\\d+").Value;
+				}
+				]]>
+      </code>
+    </script>
+  </target>
+
+  <target name="init-build"
+			depends="clean"
+			description="Creates VersionInfo.cs from the value specified at the command line or leaves the file as-is.">
+    <asminfo language="CSharp"
+				 output="source\VersionInfo.cs"
+				 if="${version::parse(build.number) != version::parse(build.number.fromfile)}">
+      <imports>
+        <import namespace="System" />
+        <import namespace="System.Reflection" />
+      </imports>
+      <attributes>
+        <attribute type="AssemblyFileVersionAttribute"
+						   value="${build.number}" />
+        <attribute type="AssemblyVersionAttribute"
+						   value="${build.number}" />
+      </attributes>
+    </asminfo>
+  </target>
+
+  <target name="build-app" depends="init-build" description="Compiles the application.">
+    <!-- Build Utils Project -->
+    <msbuild project="${basedir.app}\PreCodeWpf.csproj"
+				 target="${build.msbuild.target}"
+				 verbosity="${build.msbuild.verbosity}">
+      <arg value="/p:Configuration=${build.msbuild.configuration}" />
+    </msbuild>
+  </target>
+
+  <target name="init-unit-tests">
+    <mkdir dir="${test.results}" />
+  </target>
+
+  <target name="build-tests"
+			depends="build-app"
+			description="Compiles the applications' unit tests.">
+    <msbuild project="${basedir.test}\NUnitTests\NUnitTests.csproj"
+				 target="${build.msbuild.target}"
+				 verbosity="${build.msbuild.verbosity}">
+      <arg value="/p:Configuration=${build.msbuild.configuration}" />
+    </msbuild>
+  </target>
+
+  <target name="run-unit-tests"
+			depends="build-tests, init-unit-tests"
+			description="Runs the applications' unit tests.">
+    <exec basedir="${tools.nunit}"
+			  workingdir="${basedir.test}\NUnitTests\bin\${build.msbuild.configuration}"
+			  managed="true"
+			  program="nunit-console.exe">
+      <arg value="PreCode.NUnitTests.dll" />
+      <arg value="/xml:${test.results}\TestResults.xml" />
+      <arg value="/out:${test.results}\TestResults.txt" />
+      <arg value="/err:${test.results}\StdErr.txt" />
+      <arg value="/labels" />
+    </exec>
+  </target>
+
+  <target name="create-product-code">
+    <script language="C#">
+      <code>
+        <![CDATA[
+				public static void ScriptMain(Project project)
+				{
+					project.Properties["product.productcode"] = Guid.NewGuid().ToString();
+				}
+				]]>
+      </code>
+    </script>
+    <echo message="Product code created: ${product.productcode}" />
+  </target>
+
+  <target name="init-build-setup"
+			depends="create-product-code">
+    <mkdir dir="${deployment.artifacts}" />
+
+    <copy file="${basedir.setup}\WiX\PreCode.wxs.template"
+			  tofile="${basedir.setup}\WiX\PreCode.wxs"
+			  overwrite="true"
+			  inputencoding="utf-8"
+			  outputencoding="utf-8">
+      <filterchain>
+        <replacetokens>
+          <token key="build.number"
+						   value="${build.number}" />
+          <token key="product.productcode"
+						   value="${product.productcode}" />
+        </replacetokens>
+      </filterchain>
+    </copy>    
+        
+  </target>
+
+  <zipfileset id="deployment-binaries"
+			 basedir="${basedir.app}\bin\${build.msbuild.configuration}">
+    <include name="**/*.dll" />
+    <include name="**/*.xml" />
+  </zipfileset>
+  
+  <zipfileset id="deployment-docs"
+			 basedir="${basedir.docs}">
+    <include name="license.rtf" />   
+  </zipfileset>
+
+  <target name="build-setup"
+			depends="build-app, init-build-setup"
+			description="Creates the deployment package.">
+   
+    <!-- Zip files. -->
+    <zip zipfile="${deployment.artifacts}\PreCode_${build.number}.zip"
+			 ziplevel="9">
+      <fileset refid="deployment-binaries" />
+      <fileset refid="deployment-docs" />      
+    </zip>
+
+    <!-- WiX setup. -->
+    <property name="tools.wix.objfile"
+				  value="${basedir.setup}\WiX\obj\${build.msbuild.configuration}\PreCode.wixobj"
+				  readonly="true" />
+
+    <exec basedir="${tools.wix}"
+			  managed="true"
+			  program="candle.exe">
+      <arg line='-out "${tools.wix.objfile}"' />
+      <arg value="${basedir.setup}\Wix\PreCode.wxs" />
+    </exec>
+
+    <copy todir="${path::get-directory-name(tools.wix.objfile)}">
+      <fileset refid="deployment-binaries" />
+    </copy>
+    
+    <copy todir="${path::get-directory-name(tools.wix.objfile)}">
+      <fileset refid="deployment-docs" />
+    </copy>
+    
+    <copy todir="${path::get-directory-name(tools.wix.objfile)}"
+			  flatten="true">
+      <fileset basedir="${basedir.lib}">
+        <include name="PreCode.exe" />
+        <include name="PreCode.exe.config" />        
+      </fileset>
+    </copy>
+    
+    <copy todir="${path::get-directory-name(tools.wix.objfile)}"
+			  flatten="true">
+      <fileset basedir="${basedir.images}">
+        <include name="PreCode.ico" />
+        <include name="Setup/*.bmp" />
+        <include name="Setup/*.ico" />
+      </fileset>
+    </copy>
+
+    <exec basedir="${tools.wix}"
+					  managed="true"
+					  program="light.exe">
+      <arg value="${tools.wix.objfile}" />
+      <arg value="-spdb" />
+      <arg value="-dcl:medium" />
+      <arg line='-ext "${tools.wix}\WixUIExtension.dll"' />
+      <arg line='-ext "${tools.wix}\WixUtilExtension.dll"' />
+      <arg line='-ext "${tools.wix}\WixNetFxExtension.dll"' />
+      <arg line='-out "${deployment.artifacts}\PreCode_${build.number}.msi"' />
+    </exec>
+  </target>
+</project>
